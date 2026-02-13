@@ -1,28 +1,59 @@
-# Charn Methodology (from landing + docs)
+# Charn Methodology
 
-## Core idea
+This file is the self-contained methodology for this skill.
+No external/private repository docs are required to execute this process.
 
-Charn is a tool for structuring complex software changes. Each task is a node. Each prerequisite is an edge. Readiness is explicit: a task is ready when it has no unfinished blockers, and blocked when any prerequisite is still open.
+## Core model
 
-## Why it exists
+- Node: a task.
+- Blocker edge: "must happen before."
+- Ready node: no unfinished blockers; safe to execute now.
+- Blocked node: at least one unfinished blocker.
+- Root node: the target outcome; usually closed last.
 
-When a change depends on many unanticipated prerequisites (which can depend on more), work often drifts into partially implemented code and mixed commits. Charn keeps the system in a working state by separating prerequisites into explicit tasks and completing them before the main change.
+## Why this model exists
 
-## How to apply it
+Complex changes fail when prerequisites stay hidden and get buried in mixed commits.
+Charn keeps systems stable by making prerequisites explicit and landing them first.
 
-- Define the outcome as a root task.
-- As soon as a prerequisite is discovered, add it as a blocker task instead of shoehorning it into the same change.
-- Complete blockers to unlock the root task.
-- Use readiness as the primary signal for “what is safe to do next.”
+## Required invariants
 
-## System framing
+1. Readiness-first: choose work only from `nodes.ready`.
+2. Single-node execution: work on exactly one ready node at a time.
+3. Root-first attempt: for new work, start by attempting the root node.
+4. Discovery-driven blockers: when work goes out of scope, add a blocker immediately to the blocked node.
+5. Immediate status updates: mark nodes done when validated; never batch status changes.
+6. Root-last completion: mark the root done only after prerequisites are completed and the outcome is validated.
 
-- Precondition hygiene keeps small required steps separate before the main feature starts.
-- Refactors become a clean sequence of safe steps instead of a destabilizing leap.
-- Cognitive load drops because you can always see what is ready and what is blocked.
+## Modeling rules
 
-## Source files
+- Default attachment: new blockers attach to the node they are blocking.
+- Immediate blockers only: add blockers when they are discovered in the current step.
+- Multiple blockers under one parent are allowed when each is a real prerequisite for that parent.
+- Do not create blockers just to mirror issue/checklist wording.
 
-- `docs-site/app-guide.md`
-- `docs-site/system/index.md`
-- `frontend/src/components/LandingPage.jsx`
+## Anti-patterns
+
+### Bad process
+
+1. Create 4 blockers up front from issue/success-criteria wording.
+2. Hack on all 4 blockers in parallel.
+3. Close all 4 blockers at the end.
+
+Why bad:
+- Turns Charn into issue tracking instead of dependency execution.
+- Hides true readiness because progress is spread across multiple open nodes.
+- Encourages bulk close behavior instead of validated completion.
+
+### Good process
+
+1. Start by attempting the root node.
+2. As soon as out-of-scope work is needed, add a blocker to the blocked node.
+3. Work exactly one ready node.
+4. If another blocker is discovered, add it and continue from ready nodes.
+5. Mark each node done immediately after validation.
+
+Why good:
+- Blockers emerge from real execution, not checklist translation.
+- Work stays on executable leaves (`nodes.ready`).
+- Completion history reflects actual dependency resolution order.
