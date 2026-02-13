@@ -1,6 +1,6 @@
 ---
 name: charn
-description: Use the Charn MCP server to run blocker-first implementation: decompose issue success criteria into blockers, always query ready nodes before coding, work on ready blockers directly, and update node status continuously until the root task is complete.
+description: "Use the Charn MCP server to run blocker-first implementation: decompose issue success criteria into blockers, always query ready nodes before coding, work on ready blockers directly, and update node status continuously until the root task is complete."
 metadata:
   short-description: Blocker-first node workflow via Charn MCP
 ---
