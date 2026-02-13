@@ -1,6 +1,8 @@
 ---
 name: charn
-description: Use the local Charn MCP tool server to manage boards and nodes (list boards, set active board, query ready nodes, add blockers, and update node status) and toggle repo-local git integration. Also use this skill when you need to explain or apply the Charn methodology for mapping prerequisites and readiness as a dependency graph.
+description: Use the Charn MCP server to run blocker-first implementation: decompose issue success criteria into blockers, always query ready nodes before coding, work on ready blockers directly, and update node status continuously until the root task is complete.
+metadata:
+  short-description: Blocker-first node workflow via Charn MCP
 ---
 
 # Charn
@@ -9,20 +11,59 @@ description: Use the local Charn MCP tool server to manage boards and nodes (lis
 
 Use the configured `mcp_servers.charn` server to call Charn tools via MCP. Prefer tool calls over shelling out to the CLI.
 
-## Charn Methodology (summary)
+This file is the canonical workflow for LLM execution. Do not require reading other files before using this skill.
+Always select work from `nodes.ready`; do not start from arbitrary nodes.
 
-Charn is a tool for structuring complex software changes. When a single change depends on many unanticipated prerequisites (which may depend on more), Charn helps you focus only on what needs to be done next. It keeps the system in a working state by separating prerequisites into explicit tasks and discouraging partially implemented code from lingering.
+## Core Model
 
-For the full wording and examples, read `references/methodology.md`.
+Charn models work as a dependency graph:
 
-## Quick Start
+- Node: a task.
+- Blocker edge: a prerequisite relationship.
+- Ready node: a node with no unfinished blockers.
+
+The safe default is blocker-first execution: do prerequisites first, then main outcomes.
+
+## Start-Work Workflow (required)
+
+When starting any new issue/feature:
+
+1. Represent the issue as a root node (or select the existing root node).
+2. Read the issue success criteria and break them into child blockers as needed.
+3. Do not start implementation on the root node while criteria-level blockers are missing.
+
+Example:
+
+- Success criteria: `A`, `B`, `C`
+- Add blockers for `A`, `B`, `C` under the issue node (when each criterion is a meaningful prerequisite/workstream).
+- Implement by working on those blockers directly, not the root node.
+
+Execution loop (always follow this loop before doing any work):
+
+1. Query `nodes.ready` and pick a ready node.
+2. Work directly on that ready blocker/node.
+3. If a new prerequisite is discovered, add a blocker with `nodes.blocker.add`, then return to step 1.
+4. If finished, mark the node with `nodes.done`, then return to step 1.
+5. If a node should be retried later, use `nodes.open` and return to step 1.
+6. If the task is invalid/cannot be completed, use `nodes.fail`.
+
+Root nodes should typically be marked done only after all required blockers are done and the issue criteria are satisfied.
+Repeat this loop until the root node can be completed.
+
+If no nodes are ready, do not start ad hoc coding. Identify the true prerequisite and model it as a blocker under the correct parent.
+
+## Required Tool Sequence
 
 1. Confirm the MCP server is configured (`mcp_servers.charn` in `~/.codex/config.toml` or repo-local `.codex/config.toml`).
 2. Call `session.project.set` with an absolute `projectPath`.
 3. Optional: call `session.project.current` to verify the project binding.
 4. Use `boards.list` to discover boards.
 5. Use `boards.use` to set the active board.
-6. Use `nodes.ready` or other node tools to mutate status.
+6. Before starting any coding task, query `nodes.ready` and choose a ready node to work on.
+7. Use `nodes.blocker.add` whenever you discover a prerequisite.
+8. Use `nodes.done` / `nodes.fail` / `nodes.open` to update node status as work progresses.
+
+In Codex wrapper tools (`mcp__charn__*`), pass `repoPath` when available to avoid project-context ambiguity.
 
 ## Tools
 
@@ -51,9 +92,4 @@ Use these MCP tool names directly:
 - `boards.use` persists active board selection (same as CLI).
 - If a tool accepts `boardId`, it maps to the same override as `--board`.
 - `git.enable` / `git.disable` operate on the current repo; run in a git repo.
-- In Codex wrapper tools (`mcp__charn__*`), prefer passing `repoPath` when available to avoid project-context ambiguity.
-
-## References
-
-- `references/mcp-tools.md`
-- `references/methodology.md`
+- This skill assumes blocker-first execution, not root-first implementation.
