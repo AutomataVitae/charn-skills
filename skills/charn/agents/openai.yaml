@@ -1,0 +1,6 @@
+interface:
+  display_name: "Charn"
+  short_description: "Session-gated Charn MCP tools for boards, nodes, and git"
+  icon_small: "./assets/charn_logo.jpeg"
+  icon_large: "./assets/charn_logo.jpeg"
+  default_prompt: "Use $charn to bind project context, then manage Charn boards and nodes via MCP tools."
