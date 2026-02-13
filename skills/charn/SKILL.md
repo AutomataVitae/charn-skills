@@ -93,3 +93,10 @@ Use these MCP tool names directly:
 - If a tool accepts `boardId`, it maps to the same override as `--board`.
 - `git.enable` / `git.disable` operate on the current repo; run in a git repo.
 - This skill assumes blocker-first execution, not root-first implementation.
+
+## References
+
+Optional deep dives:
+
+- `references/mcp-tools.md`
+- `references/methodology.md`
